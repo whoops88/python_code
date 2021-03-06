@@ -1,53 +1,69 @@
-class Mytable:
-    size = 30
-
-    def __init__(self):
+class MyHashTable:
+    def __init__(self, size):
+        self.size = size
+        self.capacity = self.size
+        self.slots = [None] * self.size
         self.data = [None] * self.size
 
     def __setitem__(self, key, value):
-        h = self.get_hash(key)
-        if self.data[h] is None:
-            self.data[h]= {"key":key, "value":value}
-            return
-        h_next = h + 1
-        try:    
-            while self.data[h_next] is not None:
-                if self.data[h_next]["key"]==key:
-                    self.data[h_next]["value"]=value
-                    break
-                h_next+=1
-        except IndexError():
-            raise        
-        self.data[h_next] = {"key":key, "value":value}
+        self.put(key, value)
 
     def __getitem__(self, key):
-        h = self.get_hash(key)
         try:
-            while self.data[h]:
-                if self.data[h] and self.data[h]["key"]==key:
-                    return self.data[h]["value"]
-                h+=1
-        except IndexError:
-            return 'There is no such key'
-
-    
-    def get_hash(self, name):
-        return len(name) % self.size
-
-    def delete(self, key):
-        h = self.get_hash(key)
-        if self.data[h]["key"]==key:
-            self.data[h]=None
-            return
-        next_h = h + 1
-        try:
-            while self.data[next_h] is not None:
-                if self.data[next_h]["key"]==key:
-                    self.data[next_h]=None
-                    break
-                next_h+=1
-        except IndexError:
+            h = self.find_key_hash(key)
+            return self.data[h]
+        except KeyError(key):
             raise
+
+    def __delitem__(self, key):
+        try:
+            h = self.find_key_hash(key)
+            self.slots[h] = None
+            self.data[h] = None
+            self.capacity += 1
+        except KeyError("there is no such key") :
+            return "there is no such key"
+
+    def __repr__(self):
+        return str(self.slots) +'\n'+str(self.data)
+
+    def hashfunction(self, key):
+        return len(key) % self.size
+
+    def put(self, key, value):
+        h = self.hashfunction(key)
+        # проверяем наличие места в таблице
+        if self.capacity < 3:
+            self.slots += [None]
+            self.data += [None]
+            self.capacity += 1
+        # если ячейка пустая, записываем значения
+        if self.slots[h] is None:
+            self.slots[h] = key
+            self.data[h] = value
+            self.capacity -= 1
+        # иначе ищем ячейку с существующим ключем и меняем значение
+        else:
+            if self.slots[h] == key:
+                self.data[h] = value
+            else:
+                next_h = h + 1
+                while self.slots[next_h] is not None:
+                    if self.slots[next_h] == key:
+                        self.data[next_h] = value
+                        break
+                    next_h += 1
+                self.slots[next_h] = key
+                self.data[next_h] = value
+                self.capacity -= 1
+
+    def find_key_hash(self, key):
+        h = self.hashfunction(key)
+        while self.slots[h] is not None:
+            if self.slots[h] == key:
+                return h
+            h += 1
+        raise KeyError(key)
 
 m = {'Batman': 280,
      'Spider man': 260,
@@ -65,13 +81,10 @@ m = {'Batman': 280,
      'Wonder Woman': 101,
      'Hellboy': 104}
 
-table = Mytable()
+table = MyHashTable(20)
 for key, value in m.items():
     table[key] =  value
 
 print(table['Hulk'])
-print(table['Hellboy'])
-for i in table.data:
-    if i is not None:
-        print(i)
+print(table)
 
